@@ -9,10 +9,28 @@ $raw = [Console]::In.ReadToEnd()
 # Fall back to regex extraction if JSON is corrupted by CJK encoding.
 try {
     $data = $raw | ConvertFrom-Json
-    $pct    = [int]($data.context_window.used_percentage  ?? 0)
-    $inTok  = [int]($data.context_window.total_input_tokens  ?? 0)
-    $outTok = [int]($data.context_window.total_output_tokens ?? 0)
-    $dur    = [double]($data.cost.total_duration_ms ?? 0)
+    $cw      = $data.context_window
+    $pct     = [int]($cw.used_percentage ?? 0)
+    $ctxSize = [int]($cw.context_window_size ?? 200000)
+    $inTok   = [int]($cw.total_input_tokens ?? 0)
+    $outTok  = [int]($cw.total_output_tokens ?? 0)
+    $dur     = [double]($data.cost.total_duration_ms ?? 0)
+
+    # DEBUG: log parsed values to temp file for troubleshooting
+    $debug = "$env:TEMP\cc-statusline-debug.json"
+    try {
+        @{
+            time        = (Get-Date -Format 'HH:mm:ss')
+            pct         = $pct
+            ctxSize     = $ctxSize
+            inTok       = $inTok
+            outTok      = $outTok
+            cuInTok     = [int]($cw.current_usage.input_tokens ?? 0)
+            cuOutTok    = [int]($cw.current_usage.output_tokens ?? 0)
+            cuCacheCre  = [int]($cw.current_usage.cache_creation_input_tokens ?? 0)
+            cuCacheRead = [int]($cw.current_usage.cache_read_input_tokens ?? 0)
+        } | ConvertTo-Json -Compress | Set-Content $debug
+    } catch {}
 } catch {
     # Regex extraction avoids JSON parsing, which breaks when session_name
     # contains CJK GBK bytes that alias to ASCII " (0x22) or \ (0x5C)
