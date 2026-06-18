@@ -1,15 +1,27 @@
-﻿# statusline.ps1 鈥?Claude Code status bar
+# statusline.ps1 — Claude Code status bar
 # MUST be saved as UTF-8 with BOM (PowerShell on CJK Windows reads .ps1 as system codepage)
+[Console]::InputEncoding  = [System.Text.Encoding]::UTF8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $raw = [Console]::In.ReadToEnd()
 
-# Regex extraction avoids JSON parsing, which breaks when session_name
-# contains CJK GBK bytes that alias to ASCII " (0x22) or \ (0x5C)
-$pct  = if ($raw -match '"used_percentage":(\d+)')   { [int]$Matches[1] }    else { 0 }
-$inTok  = if ($raw -match '"total_input_tokens":(\d+)')  { [int]$Matches[1] }    else { 0 }
-$outTok = if ($raw -match '"total_output_tokens":(\d+)') { [int]$Matches[1] }    else { 0 }
-$dur  = if ($raw -match '"total_duration_ms":(\d+)') { [double]$Matches[1] } else { 0 }
+# Prefer JSON parsing (safe when InputEncoding is UTF-8).
+# Fall back to regex extraction if JSON is corrupted by CJK encoding.
+try {
+    $data = $raw | ConvertFrom-Json
+    $pct    = [int]($data.context_window.used_percentage  ?? 0)
+    $inTok  = [int]($data.context_window.total_input_tokens  ?? 0)
+    $outTok = [int]($data.context_window.total_output_tokens ?? 0)
+    $dur    = [double]($data.cost.total_duration_ms ?? 0)
+} catch {
+    # Regex extraction avoids JSON parsing, which breaks when session_name
+    # contains CJK GBK bytes that alias to ASCII " (0x22) or \ (0x5C)
+    # Anchor to context_window to avoid matching current_usage sub-fields
+    $pct  = if ($raw -match '"context_window".*?"used_percentage":(\d+)')   { [int]$Matches[1] }    else { 0 }
+    $inTok  = if ($raw -match '"context_window".*?"total_input_tokens":(\d+)')  { [int]$Matches[1] }    else { 0 }
+    $outTok = if ($raw -match '"context_window".*?"total_output_tokens":(\d+)') { [int]$Matches[1] }    else { 0 }
+    $dur  = if ($raw -match '"total_duration_ms":(\d+)') { [double]$Matches[1] } else { 0 }
+}
 
 $mins = [math]::Floor($dur / 60000)
 $secs = [math]::Floor(($dur % 60000) / 1000)
@@ -17,7 +29,7 @@ $secs = [math]::Floor(($dur % 60000) / 1000)
 $n     = [math]::Floor($pct / 10)
 $bar   = ([string][char]0x2588 * $n) + ([string][char]0x2591 * (10 - $n))
 
-# DeepSeek balance 鈥?cached 5 min to avoid API call every render
+# DeepSeek balance — cached 5 min to avoid API call every render
 $cache = "$env:TEMP\ds_balance_cache.json"
 $bal   = ""
 if ((Test-Path $cache) -and ((Get-Item $cache).LastWriteTime -gt (Get-Date).AddMinutes(-5))) {
