@@ -1,0 +1,21 @@
+{
+  "name": "Richardo11chen-plugins",
+  "owner": {
+    "name": "Richardo11chen",
+    "url": "https://github.com/Richardo11chen"
+  },
+  "plugins": [
+    {
+      "name": "claude-code-statusline",
+      "source": {
+        "source": "github",
+        "repo": "Richardo11chen/claude-code-statusline"
+      },
+      "description": "CJK Windows UTF-8 safe real-time status bar. Shows context usage bar, token count, session duration, and DeepSeek balance. Survives GBK/UTF-8 encoding conflicts on Chinese/Japanese/Korean Windows.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Richardo11chen"
+      }
+    }
+  ]
+}
