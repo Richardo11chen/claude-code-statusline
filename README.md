@@ -5,16 +5,16 @@ A real-time status bar plugin for Claude Code that survives CJK Windows encoding
 ## What it shows
 
 ```
-████████░░ 78% | $2.35 | 15m22s | 12.50CNY
+████████░░ 78% | 15.5k/1.2k tok | 15m22s | ¥12.50CNY
 ```
 
 | Segment | Meaning |
 |---------|---------|
 | `████████░░` | Context bar (10 segments, filled = used) |
 | `78%` | Context window used percentage |
-| `$2.35` | Session cost (USD) |
+| `15.5k/1.2k tok` | Input / Output tokens in current context |
 | `15m22s` | Session duration |
-| `12.50CNY` | DeepSeek balance (cached 5 min) |
+| `¥12.50CNY` | DeepSeek balance (cached 5 min) |
 
 ## Why this exists
 
@@ -71,11 +71,22 @@ session_name → GBK bytes (D0 C5 CF A2 …)
           ConvertFrom-Json → FAIL → $data = $null → all zeros
 ```
 
-**Fix:** Regex extraction bypasses JSON parsing entirely:
+**Fix:** JSON parsing with encoding-correct stdin, regex fallback:
 ```powershell
-$pct  = if ($raw -match '"used_percentage":(\d+)')   { [int]$Matches[1] }    else { 0 }
-$cost = if ($raw -match '"total_cost_usd":([\d.]+)') { [double]$Matches[1] } else { 0 }
-$dur  = if ($raw -match '"total_duration_ms":(\d+)') { [double]$Matches[1] } else { 0 }
+[Console]::InputEncoding  = [System.Text.Encoding]::UTF8
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
+try {
+    $data = $raw | ConvertFrom-Json
+    $pct    = [int]($data.context_window.used_percentage ?? 0)
+    $inTok  = [int]($data.context_window.total_input_tokens ?? 0)
+    $outTok = [int]($data.context_window.total_output_tokens ?? 0)
+} catch {
+    # CJK-safe regex fallback
+    $pct  = if ($raw -match '"context_window".*?"used_percentage":(\d+)') { ... }
+    $inTok  = if ($raw -match '"total_input_tokens":(\d+)')  { ... }
+    $outTok = if ($raw -match '"total_output_tokens":(\d+)') { ... }
+}
 ```
 
 No JSON parser → no encoding bugs.
