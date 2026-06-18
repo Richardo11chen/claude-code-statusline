@@ -1,0 +1,102 @@
+# CJK-Safe StatusLine for Claude Code
+
+A real-time status bar plugin for Claude Code that survives CJK Windows encoding hell (GBK/Shift-JIS/EUC-KR vs UTF-8).
+
+## What it shows
+
+```
+████████░░ 78% | $2.35 | 15m22s | 12.50CNY
+```
+
+| Segment | Meaning |
+|---------|---------|
+| `████████░░` | Context bar (10 segments, filled = used) |
+| `78%` | Context window used percentage |
+| `$2.35` | Session cost (USD) |
+| `15m22s` | Session duration |
+| `12.50CNY` | DeepSeek balance (cached 5 min) |
+
+## Why this exists
+
+On Chinese/Japanese/Korean Windows, PowerShell 5.1 defaults to the system codepage (GBK/CP936 for Chinese, CP932 for Japanese, CP949 for Korean), **not UTF-8**. This causes:
+
+- `.ps1` files read with wrong encoding → garbled characters → syntax errors
+- `Write-Host` output goes to console host, not stdout → Claude Code sees nothing
+- CJK bytes in JSON strings can alias to `"` (0x22) or `\` (0x5C) → JSON structure breaks
+- `$input` unreliable with `-File` → empty data → all zeros
+
+This plugin bundles all fixes in one package. Works on both PowerShell 5.1 and 7.
+
+## Requirements
+
+- Windows with PowerShell 5.1+ (PowerShell 7 recommended)
+- DeepSeek API key in `ANTHROPIC_AUTH_TOKEN` env var (for balance display)
+
+## Install
+
+```bash
+claude plugins install claude-code-statusline@Richardo11chen
+```
+
+Or manually:
+
+1. Add to `~/.claude/settings.json`:
+```json
+{
+  "extraKnownMarketplaces": {
+    "Richardo11chen-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "Richardo11chen/claude-code-statusline"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "claude-code-statusline@Richardo11chen-plugins": true
+  }
+}
+```
+
+2. Restart Claude Code.
+
+## How it works
+
+### Encoding safety
+
+```
+session_name → GBK bytes (D0 C5 CF A2 …)
+                ↓
+          byte 0x22 = ASCII " → JSON string terminates early
+                ↓
+          ConvertFrom-Json → FAIL → $data = $null → all zeros
+```
+
+**Fix:** Regex extraction bypasses JSON parsing entirely:
+```powershell
+$pct  = if ($raw -match '"used_percentage":(\d+)')   { [int]$Matches[1] }    else { 0 }
+$cost = if ($raw -match '"total_cost_usd":([\d.]+)') { [double]$Matches[1] } else { 0 }
+$dur  = if ($raw -match '"total_duration_ms":(\d+)') { [double]$Matches[1] } else { 0 }
+```
+
+No JSON parser → no encoding bugs.
+
+### Output safety
+
+- `[Console]::Write()` instead of `Write-Host` (which goes to console host, not stdout)
+- `[Console]::OutputEncoding = UTF8` for proper Unicode output
+- `[char]0xNNNN` codepoints instead of bare Unicode literals
+- UTF-8 with BOM file encoding (required by PowerShell 5.1 on CJK Windows)
+
+## Files
+
+```
+claude-code-statusline/
+├── .claude-plugin/
+│   └── plugin.json
+├── settings.json          # StatusLine hook config
+├── scripts/
+│   └── statusline.ps1     # The status bar script
+├── README.md
+├── LICENSE
+└── CHANGELOG.md
+```
