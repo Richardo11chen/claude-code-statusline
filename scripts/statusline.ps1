@@ -1,4 +1,4 @@
-# statusline.ps1 — Claude Code status bar
+# statusline.ps1 -- Claude Code status bar
 # MUST be saved as UTF-8 with BOM (PowerShell on CJK Windows reads .ps1 as system codepage)
 [Console]::InputEncoding  = [System.Text.Encoding]::UTF8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -33,7 +33,7 @@ $secs = [math]::Floor(($dur % 60000) / 1000)
 $n   = [math]::Floor($pct / 10)
 $bar = ([string][char]0x2588 * $n) + ([string][char]0x2591 * (10 - $n))
 
-# Cumulative token tracking — use peak context window as monotonic estimate.
+# Cumulative token tracking -- use peak context window as monotonic estimate.
 # context_window.total_* shrinks on /compact, but peak only grows.
 $tokCache = "$env:TEMP\cc_tok_peak.json"
 $maxIn  = $inTok
@@ -49,12 +49,12 @@ if ($inTok -gt $maxIn)   { $maxIn  = $inTok }
 if ($outTok -gt $maxOut) { $maxOut = $outTok }
 try { @{maxIn=$maxIn; maxOut=$maxOut} | ConvertTo-Json | Set-Content $tokCache } catch {}
 
-# DeepSeek balance — cached 5 min to avoid API call every render
+# DeepSeek balance -- cached 5 min to avoid API call every render
 $cache = "$env:TEMP\ds_balance_cache.json"
 $bal   = ""
 if ((Test-Path $cache) -and ((Get-Item $cache).LastWriteTime -gt (Get-Date).AddMinutes(-5))) {
     $c = Get-Content $cache -Raw | ConvertFrom-Json
-    $bal = " ¥$($c.total)$($c.currency)"
+    $bal = " " + [char]0x00A5 + "$($c.total)$($c.currency)"
 } else {
     try {
         $r = Invoke-RestMethod "https://api.deepseek.com/user/balance" `
@@ -62,12 +62,12 @@ if ((Test-Path $cache) -and ((Get-Item $cache).LastWriteTime -gt (Get-Date).AddM
         if ($r.balance_infos) {
             $b = $r.balance_infos[0]
             @{total=$b.total_balance; currency=$b.currency} | ConvertTo-Json | Set-Content $cache
-            $bal = " ¥$($b.total_balance)$($b.currency)"
+            $bal = " " + [char]0x00A5 + "$($b.total_balance)$($b.currency)"
         }
     } catch {}
     if (-not $bal -and (Test-Path $cache)) {
         $c = Get-Content $cache -Raw | ConvertFrom-Json
-        $bal = " ¥$($c.total)$($c.currency)"
+        $bal = " " + [char]0x00A5 + "$($c.total)$($c.currency)"
     }
 }
 

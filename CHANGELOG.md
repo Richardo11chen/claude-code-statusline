@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.2 (2026-06-18)
+
+- Fix: `¥` rendered as `楼` on GBK systems — all non-ASCII chars replaced with `[char]0xNNNN` escapes
+
 ## 1.0.1 (2026-06-18)
 
 - Fix: PS5.1 compatibility (replace `??`, drop `-Compress`)
