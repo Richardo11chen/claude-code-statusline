@@ -1,5 +1,7 @@
 # CJK-Safe StatusLine for Claude Code
 
+[中文文档](README.zh-CN.md)
+
 A real-time status bar plugin for Claude Code that survives CJK Windows encoding hell (GBK/Shift-JIS/EUC-KR vs UTF-8).
 
 ## What it shows
@@ -12,7 +14,7 @@ A real-time status bar plugin for Claude Code that survives CJK Windows encoding
 |---------|---------|
 | `████████░░` | Context bar (10 segments, filled = used) |
 | `78%` | Context window used percentage |
-| `15.5k/1.2k tok` | Input / Output tokens in current context |
+| `15.5k/1.2k tok` | Input / Output tokens (cumulative peak, survives `/compact`) |
 | `15m22s` | Session duration |
 | `¥12.50CNY` | DeepSeek balance (cached 5 min) |
 
@@ -60,6 +62,14 @@ This plugin bundles all fixes in one package. Works on both PowerShell 5.1 and 7
 
 That's it. No restart needed. The script is copied to `~/.claude/statusline.ps1` and your `settings.json` is updated automatically.
 
+### Uninstall
+
+```bash
+/setup-statusline uninstall
+```
+
+It removes the statusLine config from `settings.json`, deletes `~/.claude/statusline.ps1`, and cleans up permissions.
+
 ### Manual install without marketplace
 
 1. Copy `scripts/statusline.ps1` to `~/.claude/statusline.ps1`
@@ -95,16 +105,38 @@ filter def($d) { if ($null -eq $_) { $d } else { $_ } }  # PS5.1 null-coalesce
 
 try {
     $data = $raw | ConvertFrom-Json
-    $pct   = [int](($data.context_window.used_percentage) | def 0)
-    $inTok = [int](($data.context_window.total_input_tokens) | def 0)
+    $cw     = $data.context_window
+    $pct    = [int](($cw.used_percentage) | def 0)
+    $inTok  = [int](($cw.total_input_tokens) | def 0)
+    $outTok = [int](($cw.total_output_tokens) | def 0)
+    $dur    = [double](($data.cost.total_duration_ms) | def 0)
 } catch {
     # CJK-safe regex fallback — avoids Phantom-" bug
     $pct   = if ($raw -match '"context_window".*?"used_percentage":(\d+)') { [int]$Matches[1] } else { 0 }
-    $inTok = if ($raw -match '"total_input_tokens":(\d+)') { [int]$Matches[1] } else { 0 }
+    $inTok = if ($raw -match '"context_window".*?"total_input_tokens":(\d+)') { [int]$Matches[1] } else { 0 }
+    $outTok = if ($raw -match '"context_window".*?"total_output_tokens":(\d+)') { [int]$Matches[1] } else { 0 }
+    $dur   = if ($raw -match '"total_duration_ms":(\d+)') { [double]$Matches[1] } else { 0 }
 }
 ```
 
 No JSON parser → no encoding bugs.
+
+### Cumulative peak tracking
+
+`context_window.total_input_tokens` shrinks after `/compact` (context compression), causing the displayed number to fluctuate down. To fix this, the script tracks the **maximum observed value** in `%TEMP%\cc_tok_peak.json`:
+
+```powershell
+$tokCache = "$env:TEMP\cc_tok_peak.json"
+$maxIn  = $inTok
+if (Test-Path $tokCache) {
+    $tc = Get-Content $tokCache -Raw | ConvertFrom-Json
+    if ([int]$tc.maxIn -gt $maxIn) { $maxIn = [int]$tc.maxIn }
+}
+if ($inTok -gt $maxIn) { $maxIn = $inTok }
+@{maxIn=$maxIn; ...} | ConvertTo-Json | Set-Content $tokCache
+```
+
+The displayed token count **only goes up** across a session.
 
 ### Output safety
 
@@ -127,6 +159,7 @@ claude-code-statusline/
 ├── scripts/
 │   └── statusline.ps1           # PS5.1+ compatible status bar
 ├── README.md
+├── README.zh-CN.md
 ├── LICENSE
 └── CHANGELOG.md
 ```
