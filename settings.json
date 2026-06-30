@@ -1,7 +1,7 @@
 {
   "statusLine": {
     "type": "command",
-    "command": "pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"& '${CLAUDE_PLUGIN_ROOT}\\scripts\\statusline.ps1'\"",
+    "command": "powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"& '${CLAUDE_PLUGIN_ROOT}\\scripts\\statusline.ps1'\"",
     "padding": 2
   }
 }

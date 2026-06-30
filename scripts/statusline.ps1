@@ -5,15 +5,18 @@
 
 $raw = [Console]::In.ReadToEnd()
 
+# PS5.1 compatible null-coalesce helper (?? is PS7+ only)
+filter def($d) { if ($null -eq $_) { $d } else { $_ } }
+
 # Prefer JSON parsing (safe when InputEncoding is UTF-8).
 # Fall back to regex extraction if JSON is corrupted by CJK encoding.
 try {
     $data = $raw | ConvertFrom-Json
     $cw    = $data.context_window
-    $pct   = [int]($cw.used_percentage ?? 0)
-    $inTok = [int]($cw.total_input_tokens ?? 0)
-    $outTok  = [int]($cw.total_output_tokens ?? 0)
-    $dur   = [double]($data.cost.total_duration_ms ?? 0)
+    $pct   = [int](($cw.used_percentage) | def 0)
+    $inTok = [int](($cw.total_input_tokens) | def 0)
+    $outTok = [int](($cw.total_output_tokens) | def 0)
+    $dur   = [double](($data.cost.total_duration_ms) | def 0)
 } catch {
     # Regex extraction avoids JSON parsing, which breaks when session_name
     # contains CJK GBK bytes that alias to ASCII " (0x22) or \ (0x5C)
@@ -44,7 +47,7 @@ if (Test-Path $tokCache) {
 }
 if ($inTok -gt $maxIn)   { $maxIn  = $inTok }
 if ($outTok -gt $maxOut) { $maxOut = $outTok }
-try { @{maxIn=$maxIn; maxOut=$maxOut} | ConvertTo-Json -Compress | Set-Content $tokCache } catch {}
+try { @{maxIn=$maxIn; maxOut=$maxOut} | ConvertTo-Json | Set-Content $tokCache } catch {}
 
 # DeepSeek balance — cached 5 min to avoid API call every render
 $cache = "$env:TEMP\ds_balance_cache.json"
