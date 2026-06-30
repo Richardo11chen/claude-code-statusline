@@ -46,7 +46,13 @@ This plugin bundles all fixes in one package. Works on both PowerShell 5.1 and 7
 /plugin install claude-code-statusline@Richardo11chen-plugins
 ```
 
-That's it. Restart Claude Code or reload your session.
+**Step 3** — Reload to activate:
+
+```bash
+/reload-plugins
+```
+
+That's it. No restart needed.
 
 ### Manual install
 
