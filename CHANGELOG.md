@@ -4,8 +4,8 @@
 
 - Initial release
 - UTF-8 safe context bar with block characters
-- Real-time session cost + duration display
+- Real-time input/output token display with cumulative peak tracking
 - DeepSeek balance with 5-minute cache
-- Regex-based value extraction (avoids JSON encoding bugs)
-- Works on PowerShell 5.1 and 7
+- JSON parsing with CJK-safe regex fallback
+- PS5.1+ compatible (uses `powershell` built into Windows 10/11)
 - CJK Windows (GBK/Shift-JIS/EUC-KR) tested

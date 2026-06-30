@@ -29,18 +29,29 @@ This plugin bundles all fixes in one package. Works on both PowerShell 5.1 and 7
 
 ## Requirements
 
-- Windows with PowerShell 5.1+ (PowerShell 7 recommended)
+- Windows 10/11 with PowerShell 5.1+ (built-in, no extra install needed)
 - DeepSeek API key in `ANTHROPIC_AUTH_TOKEN` env var (for balance display)
 
 ## Install
 
+**Step 1** — Add the marketplace (once per machine):
+
 ```bash
-claude plugins install claude-code-statusline@Richardo11chen
+/plugin marketplace add Richardo11chen/claude-code-statusline
 ```
 
-Or manually:
+**Step 2** — Install the plugin:
 
-1. Add to `~/.claude/settings.json`:
+```bash
+/plugin install claude-code-statusline@Richardo11chen-plugins
+```
+
+That's it. Restart Claude Code or reload your session.
+
+### Manual install
+
+If the commands above don't work, add this to `~/.claude/settings.json`:
+
 ```json
 {
   "extraKnownMarketplaces": {
@@ -57,8 +68,6 @@ Or manually:
 }
 ```
 
-2. Restart Claude Code.
-
 ## How it works
 
 ### Encoding safety
@@ -71,21 +80,20 @@ session_name → GBK bytes (D0 C5 CF A2 …)
           ConvertFrom-Json → FAIL → $data = $null → all zeros
 ```
 
-**Fix:** JSON parsing with encoding-correct stdin, regex fallback:
+**Fix:** JSON parsing with correct input encoding, regex fallback for CJK edge cases:
 ```powershell
 [Console]::InputEncoding  = [System.Text.Encoding]::UTF8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+filter def($d) { if ($null -eq $_) { $d } else { $_ } }  # PS5.1 null-coalesce
 
 try {
     $data = $raw | ConvertFrom-Json
-    $pct    = [int]($data.context_window.used_percentage ?? 0)
-    $inTok  = [int]($data.context_window.total_input_tokens ?? 0)
-    $outTok = [int]($data.context_window.total_output_tokens ?? 0)
+    $pct   = [int](($data.context_window.used_percentage) | def 0)
+    $inTok = [int](($data.context_window.total_input_tokens) | def 0)
 } catch {
-    # CJK-safe regex fallback
-    $pct  = if ($raw -match '"context_window".*?"used_percentage":(\d+)') { ... }
-    $inTok  = if ($raw -match '"total_input_tokens":(\d+)')  { ... }
-    $outTok = if ($raw -match '"total_output_tokens":(\d+)') { ... }
+    # CJK-safe regex fallback — avoids Phantom-" bug
+    $pct   = if ($raw -match '"context_window".*?"used_percentage":(\d+)') { [int]$Matches[1] } else { 0 }
+    $inTok = if ($raw -match '"total_input_tokens":(\d+)') { [int]$Matches[1] } else { 0 }
 }
 ```
 
@@ -103,10 +111,11 @@ No JSON parser → no encoding bugs.
 ```
 claude-code-statusline/
 ├── .claude-plugin/
-│   └── plugin.json
-├── settings.json          # StatusLine hook config
+│   ├── plugin.json
+│   └── marketplace.json
+├── settings.json            # StatusLine hook config
 ├── scripts/
-│   └── statusline.ps1     # The status bar script
+│   └── statusline.ps1       # PS5.1+ compatible status bar
 ├── README.md
 ├── LICENSE
 └── CHANGELOG.md
