@@ -1,7 +1,7 @@
 {
   "name": "claude-code-statusline",
   "displayName": "CJK-Safe StatusLine",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "CJK Windows UTF-8 safe real-time status bar showing context usage, session cost, time, and DeepSeek balance. Built to survive GBK/UTF-8 encoding conflicts on Chinese/Japanese/Korean Windows.",
   "author": {
     "name": "Richardo11chen",
@@ -19,5 +19,6 @@
     "powershell"
   ],
   "homepage": "https://github.com/Richardo11chen/claude-code-statusline",
-  "repository": "https://github.com/Richardo11chen/claude-code-statusline"
+  "repository": "https://github.com/Richardo11chen/claude-code-statusline",
+  "skills": ["./skills/setup-statusline"]
 }

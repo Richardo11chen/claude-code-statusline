@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.0 (2026-06-18)
+
+- Feature: `/setup-statusline` skill — auto-configures statusLine in settings.json
+- Feature: `/setup-statusline uninstall` skill — removes config and script
+- Fix: no more manual settings.json editing needed
+
 ## 1.0.2 (2026-06-18)
 
 - Fix: `¥` rendered as `楼` on GBK systems — all non-ASCII chars replaced with `[char]0xNNNN` escapes

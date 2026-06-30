@@ -46,30 +46,31 @@ This plugin bundles all fixes in one package. Works on both PowerShell 5.1 and 7
 /plugin install claude-code-statusline@Richardo11chen-plugins
 ```
 
-**Step 3** — Reload to activate:
+**Step 3** — Run setup (auto-configures statusLine):
+
+```bash
+/setup-statusline
+```
+
+**Step 4** — Reload to activate:
 
 ```bash
 /reload-plugins
 ```
 
-That's it. No restart needed.
+That's it. No restart needed. The script is copied to `~/.claude/statusline.ps1` and your `settings.json` is updated automatically.
 
-### Manual install
+### Manual install without marketplace
 
-If the commands above don't work, add this to `~/.claude/settings.json`:
+1. Copy `scripts/statusline.ps1` to `~/.claude/statusline.ps1`
+2. Add this to `~/.claude/settings.json`:
 
 ```json
 {
-  "extraKnownMarketplaces": {
-    "Richardo11chen-plugins": {
-      "source": {
-        "source": "github",
-        "repo": "Richardo11chen/claude-code-statusline"
-      }
-    }
-  },
-  "enabledPlugins": {
-    "claude-code-statusline@Richardo11chen-plugins": true
+  "statusLine": {
+    "type": "command",
+    "command": "powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"& (Join-Path (Resolve-Path ~) '.claude\\statusline.ps1')\"",
+    "padding": 2
   }
 }
 ```
@@ -119,9 +120,12 @@ claude-code-statusline/
 ├── .claude-plugin/
 │   ├── plugin.json
 │   └── marketplace.json
-├── settings.json            # StatusLine hook config
+├── skills/
+│   └── setup-statusline/
+│       └── SKILL.md            # /setup-statusline auto-config
+├── settings.json                # StatusLine hook config
 ├── scripts/
-│   └── statusline.ps1       # PS5.1+ compatible status bar
+│   └── statusline.ps1           # PS5.1+ compatible status bar
 ├── README.md
 ├── LICENSE
 └── CHANGELOG.md
