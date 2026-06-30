@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1 (2026-06-18)
+
+- Fix: PS5.1 compatibility (replace `??`, drop `-Compress`)
+- Fix: use `powershell` instead of `pwsh` (built into Windows)
+- Fix: cumulative token peak tracking (stops fluctuation after `/compact`)
+- Fix: correct install flow with `/reload-plugins` step
+
 ## 1.0.0 (2026-06-18)
 
 - Initial release
