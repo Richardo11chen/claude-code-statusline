@@ -48,16 +48,16 @@ This plugin bundles all fixes in one package. Works on both PowerShell 5.1 and 7
 /plugin install claude-code-statusline@Richardo11chen-plugins
 ```
 
-**Step 3** — Run setup (auto-configures statusLine):
-
-```bash
-/setup-statusline
-```
-
-**Step 4** — Reload to activate:
+**Step 3** — Reload to load the plugin's skill:
 
 ```bash
 /reload-plugins
+```
+
+**Step 4** — Run setup (auto-configures statusLine):
+
+```bash
+/setup-statusline
 ```
 
 That's it. No restart needed. The script is copied to `~/.claude/statusline.ps1` and your `settings.json` is updated automatically.

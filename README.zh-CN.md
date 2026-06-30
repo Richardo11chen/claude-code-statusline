@@ -46,16 +46,16 @@
 /plugin install claude-code-statusline@Richardo11chen-plugins
 ```
 
-**第 3 步** — 运行配置（自动设置状态栏）：
-
-```
-/setup-statusline
-```
-
-**第 4 步** — 加载生效：
+**第 3 步** — 重新加载插件（加载 skill）：
 
 ```
 /reload-plugins
+```
+
+**第 4 步** — 运行配置（自动设置状态栏）：
+
+```
+/setup-statusline
 ```
 
 搞定，无需重启。脚本会被复制到 `~/.claude/statusline.ps1`，`settings.json` 会自动更新。
